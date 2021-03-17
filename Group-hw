@@ -1,0 +1,56 @@
+data health;
+input country $ infection $ count;
+datalines;
+Guinea YES 1327
+Guinea NO 837
+Liberia YES 3145
+Liberia NO 4490
+;
+run;
+
+proc freq data=health order=data;
+weight count;
+tables country * infection / chisq riskdiff;
+run;
+
+proc sgplot data=health;
+vbox  / group=country;
+run;
+
+
+/* (a) */
+/*  Report a 95% confidence interval for the difference in fatality rates 
+between Guinea and Liberia. 
+
+A 95% confidence interval for the difference in fatality rates between Guinea and Liberia is
+(0.1780	, 0.2246 ).  */
+
+/* b) */
+/*  What does the confidence interval in (a) indicate about the rates in the two countries? 
+ 
+We can be 95% confident that the true fatality rate ranges from 17-22%, which means that 
+the fatality rates in Liberia are around 17-22% higher than in Guinea.  */
+
+/* c) */
+
+data health_1;
+input country $ infection $ count;
+datalines;
+Guinea YES 1327
+Guinea NO 837
+Sierra YES 1583
+Sierra NO 7312
+;
+run;
+
+proc freq data=health_1 order=DATA;
+weight count;
+tables country * infection / riskdiff;
+run;
+
+proc means data= health_1;
+class country;
+run;
+
+/* A 95% confidence interval for the difference in fatality rates between 
+Guinea and Sierra Leone is (0.4132, 0.4573 ) */
