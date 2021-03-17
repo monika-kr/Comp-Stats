@@ -1,0 +1,38 @@
+FILENAME REFFILE '/folders/myfolders/states.csv';
+
+PROC IMPORT DATAFILE=REFFILE
+	DBMS=CSV
+	OUT=states
+	replace;
+	GETNAMES=YES;
+RUN;
+
+
+PROC PRINCOMP DATA=states ;
+   ods output Eigenvalues=Evals;
+run;
+
+PROC PRINQUAL  DATA=states plot=all ;
+transform identity(population -- area);
+ID state;
+RUN;
+
+
+proc iml;
+use Evals;  read all var {"Number" "Proportion"};  close;
+p = nrow(Proportion);
+g = cusum(1 / T(p:1)) / p;   
+ExpectedLen = g[p:1];         
+keep = 0;                    
+do i = 1 to p while(ExpectedLen[i] < Proportion[i]);
+   keep = i;
+end;
+print Proportion ExpectedLen keep;
+run;
+
+mean = mean(Proportion);
+keepAvg = loc( Proportion >= mean )[<>];
+ 
+keepScaled = loc( Proportion >= 0.7*mean )[<>];
+print keepAvg keepScaled;
+run;
