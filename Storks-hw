@@ -1,0 +1,25 @@
+filename refile '/folders/myfolders/storks.csv';
+
+proc import datafile=refile replace
+	dbms=CSV
+	out=WORK.storks;
+	getnames=YES;
+run;
+
+title "Storks vs Babies";
+proc sgplot data=storks;
+	scatter x=storks y=children / markerattrs=(symbol=circlefilled);
+	xaxis grid label="Number of storks in Alsace region";
+	yaxis grid label="The average number of children per woman";
+run;
+
+proc reg data=storks;
+   model children=storks;
+run;
+
+PROC CORR DATA=storks SPEARMAN;
+RUN;
+
+PROC CORR DATA=storks;
+VAR storks children;
+RUN;
