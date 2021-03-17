@@ -1,0 +1,85 @@
+filename refile '/folders/myfolders/assign_data.csv';
+
+proc import datafile=refile replace
+	dbms=CSV
+	out=WORK.assign REPLACE;
+	getnames=YES;
+run;
+
+/* Transform data with only the word frequencies and the number of friends */
+DATA assign_1(DROP = N gender age gradyear); 
+SET assign;
+RUN;
+
+DATA assign_a(DROP = N gender age gradyear friends); 
+SET assign;
+RUN;
+
+/* standardize data */ 
+proc stdize data=assign_1 out=assign_st;
+run;
+
+PROC fastclus data=assign_st maxclusters=5  REPLACE=RANDOM RANDOM=1 out=assign_out;
+	var friends -- drugs;
+RUN;
+
+PROC fastclus data=assign_st maxclusters=5 REPLACE=RANDOM RANDOM=3 out=assign_o;
+	var friends -- drugs;
+RUN;
+
+PROC fastclus data=assign_a maxclusters=5 REPLACE=RANDOM RANDOM=3 out=assign_out;
+	var basketball -- drugs;
+RUN;
+
+
+proc candisc data=assign_o out=Can noprint;
+      class Cluster;
+      var friends -- drugs;
+   
+proc sgplot data=Can;
+      scatter y=Can2 x=Can1 / group=Cluster ;
+run;
+
+
+/* drop friends from data for PCA */
+DATA assign_2(DROP = N gender age gradyear friends); 
+SET assign;
+RUN;
+
+PROC PRINCOMP  DATA=assign_2 out=pca;
+ods output eigenvalues=eig;
+
+proc plot data=eig;
+ plot eigenvalue * Number; 
+
+
+proc corr data=assign_2 pearson;
+run;
+
+/* Differenciate between genders) */
+DATA assign_3(DROP = N age gradyear friends); 
+SET assign;
+RUN;
+
+/* remove entries without a specified gender */
+DATA assign_4;
+     SET assign_3;
+     IF gender = 'NA' then delete;
+RUN;
+
+%let _stdvar = ;
+PROC STEPDISC DATA=assign_4 bsscp tsscp;
+  class gender;
+  /*var basketball football softball soccer volleyball swimming baseball tennis sports; */
+  var basketball -- drugs;
+run;
+
+%put &_stdvar;
+
+PROC DISCRIM DATA=assign_4 POOL=no WCOV PCOV SIMPLE
+ METHOD=NORMAL OUTSTAT=FINANCE_STAT;
+ CLASS gender;
+ VAR &_stdvar; 
+RUN;
+
+/* Since Chi-Square value (p<0.0001) is sign., we should use  POOL=NO */
