@@ -1,0 +1,26 @@
+FILENAME REFFILE '/folders/myfolders/ts.csv';
+
+PROC IMPORT DATAFILE=REFFILE
+	DBMS=CSV
+	OUT=ts
+	replace;
+	GETNAMES=YES;
+RUN;
+
+data ts;
+ set ts;
+ t=_N_;
+run;
+
+proc arima data=ts;
+	identify var=x;
+run;
+
+proc arima data=ts;
+	identify var=x(1);
+	estimate p=1 q=1 method=ml;
+	estimate p=2 q=0 method=ml;
+	estimate p=3 q=0 method=ml;
+	estimate p=3 q=1 method=ml;
+	estimate p=4 q=0 method=ml;
+run;
